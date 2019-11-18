@@ -1,0 +1,47 @@
+{
+  "name": "vue-ssr-tools",
+  "version": "0.1.0",
+  "description": "Tooling for working with Vue server side",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && nyc --reporter=lcov --require ts-node/register tape test/**/*.{ts,js} | tap-spec; nyc report ---reporter=text"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zmartbag/vue-ssr-tools.git"
+  },
+  "keywords": [
+    "vue",
+    "ssr"
+  ],
+  "author": "Lilleman <lilleman@larvit.se>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zmartbag/vue-ssr-tools/issues"
+  },
+  "homepage": "https://github.com/zmartbag/vue-ssr-tools#readme",
+  "devDependencies": {
+    "@types/tape": "4.2.33",
+    "nyc": "14.1.1",
+    "tap-spec": "5.0.0",
+    "tape": "4.11.0",
+    "ts-node": "8.5.2",
+    "tslint": "6.0.0-beta0",
+    "typescript": "3.7.2"
+  },
+  "dependencies": {
+    "larvitutils": "3.2.1",
+    "vue": "2.6.10",
+    "vue-server-renderer": "^2.6.10"
+  },
+  "nyc": {
+    "include": [
+      "src/**/*.ts"
+    ],
+    "extension": [
+      ".ts"
+    ]
+  }
+}
