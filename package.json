@@ -39,7 +39,7 @@
     "vue": "2.6.10"
   },
   "dependencies": {
-    "larvitutils": "4.0.0-beta3"
+    "larvitutils": "4.0.0-beta4"
   },
   "nyc": {
     "include": [

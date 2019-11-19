@@ -64,14 +64,14 @@ class VueRender {
             createdApp = app;
         }
         catch (err) {
-            if (err.code === 404) {
+            if (err.name === '404') {
                 log.debug(logPrefix + 'No vue route was matched');
                 res.statusCode = 404;
                 res.end('Not Found');
                 return;
             }
             else {
-                log.error(logPrefix + 'Error creating main app: "' + err.message + '"');
+                log.error(logPrefix + 'Error creating main app: "' + err.message + '" on url: "' + req.url + '"');
                 throw err;
             }
         }

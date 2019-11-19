@@ -94,9 +94,107 @@ server.listen(3000, err => {
 });
 ----
 
+test it out bu running it from the console: `node index.js`
+
 === 2. Client side hydration
 
 Make vue work on the client as well
 
 ==== Break apart the code we want to use both client- and serverside
 
+In this step, we make no change to the actual code, just splitting it up in different files.
+
+'''
+
+The main vue component is the vue component that will be mounted in the html template.
+
+public/vue/components/main.js
+[source,javascript]
+----
+export default function () {
+	return {
+		template: `<div id="vue-main">
+			<ul>
+				<li><router-link to="/">Home</router-link></li>
+				<li><router-link to="/foo">Foo</router-link></li>
+			</ul>
+			<router-view></router-view>
+		</div>`
+	};
+}
+----
+
+'''
+
+Routes sent to the router, see vue-router documentation for more options and how these actually work.
+
+public/vue/routes.js
+[source,javascript]
+----
+export default [
+	{ path: '/', component: { template: '<p>Home</p>' }},
+	{ path: '/foo', component: { template: '<p>Foo</p>' }}
+]
+----
+
+'''
+
+The base template all pages will share. {{ title }} and {{{ head }}} will be covered later. <!-- vue-ssr-outlet --> will be replaced with
+your main component (see above).
+
+index.template.html
+[source,html]
+----
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>{{ title }}</title>
+		{{{ head }}}
+	</head>
+	<body>
+		<!--vue-ssr-outlet-->
+	</body>
+</html>
+----
+
+
+'''
+
+Tie it all together in the index file.
+
+index.js
+[source,javascript]
+----
+import { VueRender } from 'vue-ssr-tools';
+import vueServerRenderer from 'vue-server-renderer';
+import Router from 'vue-router';
+import Vue from 'vue';
+import express from 'express';
+
+// Imported stuff not needed when all was in the same file:
+import MainComponent from './public/vue/components/main.js';
+import routes from './public/vue/routes.js';
+import fs from 'fs';
+
+Vue.use(Router);
+
+const server = express();
+
+// Instance of a SSR vue render thingie with routes and all
+const vueRender = new VueRender({
+	MainComponent,
+	Router,
+	routes,
+	template: fs.readFileSync(__dirname + '/index.template.html', 'utf-8'),
+	Vue,
+	vueServerRenderer,
+});
+
+// Register the vueRender middleware on the express server
+server.get('*', vueRender.middleware.bind(vueRender));
+
+server.listen(3000, err => {
+	if (err) throw err;
+	console.log('HTTP server started on port: "3000"');
+});
+----
