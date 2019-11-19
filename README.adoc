@@ -21,7 +21,7 @@ Node with ESM Module support needed. Node 8 and up supports this under the flag 
 This is the most basic implementation without client side hydration (Vue only runs server side)
 
 index.js
-[source,javascript]
+[source,javascript,linenums]
 ----
 import { VueRender } from 'vue-ssr-tools';
 import vueServerRenderer from 'vue-server-renderer';
@@ -109,7 +109,7 @@ In this step, we make no change to the actual code, just splitting it up in diff
 The main vue component is the vue component that will be mounted in the html template.
 
 public/vue/components/main.js
-[source,javascript]
+[source,javascript,linenums]
 ----
 export default function () {
 	return {
@@ -129,7 +129,7 @@ export default function () {
 Routes sent to the router, see vue-router documentation for more options and how these actually work.
 
 public/vue/routes.js
-[source,javascript]
+[source,javascript,linenums]
 ----
 export default [
 	{ path: '/', component: { template: '<p>Home</p>' }},
@@ -143,7 +143,7 @@ The base template all pages will share. {{ title }} and {{{ head }}} will be cov
 your main component (see above).
 
 index.template.html
-[source,html]
+[source,html,linenums]
 ----
 <!DOCTYPE html>
 <html lang="en">
@@ -163,7 +163,7 @@ index.template.html
 Tie it all together in the index file.
 
 index.js
-[source,javascript,highlight='7-10']
+[source,javascript,linenums]
 ----
 import { VueRender } from 'vue-ssr-tools';
 import vueServerRenderer from 'vue-server-renderer';
