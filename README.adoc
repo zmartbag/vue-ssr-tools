@@ -100,7 +100,7 @@ test it out bu running it from the console: `node index.js`
 
 Make vue work on the client as well
 
-==== Break apart the code we want to use both client- and serverside
+==== 2.1. Break apart the code we want to use both client- and serverside
 
 In this step, we make no change to the actual code, just splitting it up in different files.
 
@@ -163,7 +163,7 @@ index.template.html
 Tie it all together in the index file.
 
 index.js
-[source,javascript]
+[source,javascript,highlight='7-10']
 ----
 import { VueRender } from 'vue-ssr-tools';
 import vueServerRenderer from 'vue-server-renderer';

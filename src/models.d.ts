@@ -7,7 +7,7 @@ import vueServerRenderer, { RendererOptions, Renderer } from 'vue-server-rendere
  * @param MainComponent Function that returns a promise that resolves to a vue component
  */
 type CreateAppOptions = {
-	data: any;
+	initialData: any;
 	MainComponent: MainComponentType;
 	Router: typeof Router;
 	routes: RouteConfig[];
