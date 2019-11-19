@@ -1,3 +1,102 @@
 = Vue SSR Tools
 
 Tooling for working with Vue server side
+
+== Installation
+
+`npm i vue-ssr-tools`
+
+== Dependencies
+
+Some packages or some compatible equivalent needs to be installed:
+
+`npm i vue vue-router vue-server-renderer express`
+
+Node with ESM Module support needed. Node 8 and up supports this under the flag --experimental modules and from Node 13.2 ESM Modules should be supported without the flag (as I write this Node 13.1 is the latest release).
+
+== Usage
+
+=== 1. Basic server side render with router
+
+This is the most basic implementation without client side hydration (Vue only runs server side)
+
+index.js
+[source,javascript]
+----
+import { VueRender } from 'vue-ssr-tools';
+import vueServerRenderer from 'vue-server-renderer';
+import Router from 'vue-router';
+import Vue from 'vue';
+import express from 'express';
+
+// The router must be attached to the vue before anything else happends
+// this is ugly as **** and will most likely be removed in Vue 3
+Vue.use(Router);
+
+const server = express();
+
+// Instance of a SSR vue render thingie with routes and all
+const vueRender = new VueRender({
+
+	// The main vue component is the vue component that
+	// will be mounted in the html template
+	MainComponent: () => {
+		return {
+			template: `<div id="vue-main">
+				<ul>
+					<li><router-link to="/">Home</router-link></li>
+					<li><router-link to="/foo">Foo</router-link></li>
+				</ul>
+				<router-view></router-view>
+			</div>`
+		}
+	},
+
+	// Router constructor, must be compatible with vue-router
+	// but you can hack your own if you like
+	Router,
+
+	// Routes sent to the router, see vue-router documentation for
+	// more options and how these actually work
+	routes: [
+		{ path: '/', component: { template: '<p>Home</p>' }},
+		{ path: '/foo', component: { template: '<p>Foo</p>' }}
+	],
+
+	// The base template all pages will share.
+	// {{ title }} and {{{ head }}} will be covered later
+	// <!-- vue-ssr-outlet --> will be replaced with
+	// your main component (see above)
+	template: `<!DOCTYPE html>
+		<html lang="en">
+			<head>
+				<title>{{ title }}</title>
+				{{{ head }}}
+			</head>
+			<body>
+				<!--vue-ssr-outlet-->
+			</body>
+		</html>`,
+
+	// Vue constructor
+	Vue,
+
+	// Vue server side renderer
+	vueServerRenderer,
+});
+
+// Register the vueRender middleware on the express server
+server.get('*', vueRender.middleware.bind(vueRender));
+
+server.listen(3000, err => {
+	if (err) throw err;
+	console.log('HTTP server started on port: "3000"');
+});
+----
+
+=== 2. Client side hydration
+
+Make vue work on the client as well
+
+==== Break apart the code we want to use both client- and serverside
+
