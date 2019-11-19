@@ -185,7 +185,7 @@ const vueRender = new VueRender({
 	MainComponent,
 	Router,
 	routes,
-	template: fs.readFileSync(__dirname + '/index.template.html', 'utf-8'),
+	template: fs.readFileSync('./index.template.html', 'utf-8'),
 	Vue,
 	vueServerRenderer,
 });
