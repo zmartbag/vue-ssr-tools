@@ -16,14 +16,14 @@ const topLogPrefix = 'vue-ssr-tools: ';
 // !!! Vue.use(Router) must already be ran before this function is called !!!
 async function createApp(options: CreateAppOptions) {
 	const {
-		data,
+		initialData,
 		MainComponent,
 		Router,
 		routes,
 		url,
 		Vue,
 	} = options;
-	const main = await MainComponent({ data });
+	const main = await MainComponent({ initialData });
 	const router = new Router({
 		mode: 'history',
 		routes,
@@ -102,7 +102,6 @@ class VueRender {
 
 		try {
 			const { app } = await createApp({
-				data: { req: { url: req.url }},
 				MainComponent,
 				Router,
 				routes,

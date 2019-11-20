@@ -198,3 +198,98 @@ server.listen(3000, err => {
 	console.log('HTTP server started on port: "3000"');
 });
 ----
+
+
+==== 2.2. Create new files needed client side
+
+First we need to modify our index to serve our node_modules and public folders to the browser.
+
+index.js
+[source,javascript]
+----
+import { VueRender } from 'vue-ssr-tools';
+import vueServerRenderer from 'vue-server-renderer';
+import Router from 'vue-router';
+import Vue from 'vue';
+import express from 'express';
+
+// Imported stuff not needed when all was in the same file:
+import MainComponent from './public/vue/components/main.js';
+import routes from './public/vue/routes.js';
+import fs from 'fs';
+
+Vue.use(Router);
+
+const server = express();
+
+// Serve the public folder as static files directly
+server.use(express.static('public'));
+
+// Server node modules publicly
+server.use('/node_modules', express.static('node_modules'));
+
+// Instance of a SSR vue render thingie with routes and all
+const vueRender = new VueRender({
+	MainComponent,
+	Router,
+	routes,
+	template: fs.readFileSync('./index.template.html', 'utf-8'),
+	Vue,
+	vueServerRenderer,
+});
+
+// Register the vueRender middleware on the express server
+server.get('*', vueRender.middleware.bind(vueRender));
+
+server.listen(3000, err => {
+	if (err) throw err;
+	console.log('HTTP server started on port: "3000"');
+});
+----
+
+'''
+
+This file is only ran client side to create the vue app in the browser.
+
+public/vue/entry.js
+[source,javascript]
+----
+import { createApp } from '/node_modules/vue-ssr-tools/index.js';
+import Vue from '/node_modules/vue/dist/vue.esm.browser.min.js';
+import Router from '/node_modules/vue-router/dist/vue-router.esm.browser.min.js';
+import MainComponent from './components/main.js';
+import routes from './routes.js';
+
+Vue.use(Router);
+
+(async () => {
+	const { app } = await createApp({
+		MainComponent,
+		Router,
+		routes,
+		url: window.location.pathname,
+		Vue,
+	});
+	app.$mount('#vue-main')
+})();
+----
+
+'''
+
+We also need to modify our base template to include our client entry file.
+
+index.template.html
+[source,html]
+----
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>{{ title }}</title>
+		<script defer src="/vue/entry.js" type="module"></script>
+		{{{ head }}}
+	</head>
+	<body>
+		<!--vue-ssr-outlet-->
+	</body>
+</html>
+----
