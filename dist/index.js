@@ -13,7 +13,7 @@ const defaultLogger = {
 async function createApp(options) {
     const logPrefix = topLogPrefix + 'createApp() - ';
     const { initialData, MainComponent, Router, routes, url, Vue, } = options;
-    const main = await MainComponent({ initialData });
+    const main = await MainComponent(initialData);
     const router = new Router({
         mode: 'history',
         routes,
@@ -45,6 +45,7 @@ class VueRender {
     constructor(options) {
         this.classLogPrefix = topLogPrefix + 'VueRender: ';
         this.defaultTitle = options.defaultTitle ? options.defaultTitle : 'Title';
+        this.initialData = options.initialData;
         this.log = options.log ? options.log : defaultLogger;
         this.MainComponent = options.MainComponent;
         this.Router = options.Router;
@@ -55,7 +56,7 @@ class VueRender {
         this.vueRenderer = this.vueServerRenderer.createRenderer({ template: this.template });
     }
     async middleware(req, res) {
-        const { classLogPrefix, defaultTitle, log, MainComponent, Router, routes, Vue, vueRenderer, } = this;
+        const { classLogPrefix, defaultTitle, initialData, log, MainComponent, Router, routes, Vue, vueRenderer, } = this;
         const logPrefix = classLogPrefix + 'middleware() - ';
         const context = {
             url: req.url,
@@ -66,6 +67,7 @@ class VueRender {
         log.debug(logPrefix + 'Trying to create the main app');
         try {
             const { app } = await createApp({
+                initialData,
                 log,
                 MainComponent,
                 Router,

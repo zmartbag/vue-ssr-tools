@@ -1,12 +1,12 @@
 import {
+	ComponentType,
 	CreateAppOptions,
-	MainComponentType,
 	RouteConfig,
 	RouterType,
-	VueType,
 	VueRenderOptions,
 	vueServerRenderer,
 	VueServerRenderer,
+	VueType,
 } from './models';
 import { LogInstance } from 'larvitutils';
 import { IncomingMessage, ServerResponse } from 'http';
@@ -35,7 +35,7 @@ async function createApp(options: CreateAppOptions) {
 		url,
 		Vue,
 	} = options;
-	const main = await MainComponent({ initialData });
+	const main = await MainComponent(initialData);
 	const router = new Router({
 		mode: 'history',
 		routes,
@@ -72,8 +72,9 @@ async function createApp(options: CreateAppOptions) {
 class VueRender {
 	private classLogPrefix = topLogPrefix + 'VueRender: ';
 	private defaultTitle: string;
+	private initialData: any;
 	private log: LogInstance;
-	private MainComponent: MainComponentType;
+	private MainComponent: ComponentType;
 	private Router: typeof RouterType;
 	private routes: RouteConfig[];
 	private template: string;
@@ -83,6 +84,7 @@ class VueRender {
 
 	constructor(options: VueRenderOptions) {
 		this.defaultTitle = options.defaultTitle ? options.defaultTitle : 'Title';
+		this.initialData = options.initialData;
 		this.log = options.log ? options.log : defaultLogger;
 		this.MainComponent = options.MainComponent;
 		this.Router = options.Router;
@@ -98,6 +100,7 @@ class VueRender {
 		const {
 			classLogPrefix,
 			defaultTitle,
+			initialData,
 			log,
 			MainComponent,
 			Router,
@@ -117,6 +120,7 @@ class VueRender {
 
 		try {
 			const { app } = await createApp({
+				initialData,
 				log,
 				MainComponent,
 				Router,

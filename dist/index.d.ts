@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { CreateAppOptions, RouterType, VueType, VueRenderOptions } from './models';
+import { CreateAppOptions, RouterType, VueRenderOptions, VueType } from './models';
 import { IncomingMessage, ServerResponse } from 'http';
 declare function createApp(options: CreateAppOptions): Promise<{
     app: import("vue/types/vue").CombinedVueInstance<VueType, object, object, object, Record<never, any>>;
@@ -8,6 +8,7 @@ declare function createApp(options: CreateAppOptions): Promise<{
 declare class VueRender {
     private classLogPrefix;
     private defaultTitle;
+    private initialData;
     private log;
     private MainComponent;
     private Router;
