@@ -71,6 +71,7 @@ const vueRender = new VueRender({
 		<html lang="en">
 			<head>
 				<title>{{ title }}</title>
+				<meta charset="utf-8" />
 				{{{ head }}}
 			</head>
 			<body>
@@ -149,6 +150,7 @@ index.template.html
 <html lang="en">
 	<head>
 		<title>{{ title }}</title>
+		<meta charset="utf-8" />
 		{{{ head }}}
 	</head>
 	<body>
