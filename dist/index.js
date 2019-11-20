@@ -1,9 +1,8 @@
-import { Log } from 'larvitutils';
 const topLogPrefix = 'vue-ssr-tools: ';
 // !!! Vue.use(Router) must already be ran before this function is called !!!
 async function createApp(options) {
-    const { data, MainComponent, Router, routes, url, Vue, } = options;
-    const main = await MainComponent({ data });
+    const { initialData, MainComponent, Router, routes, url, Vue, } = options;
+    const main = await MainComponent({ initialData });
     const router = new Router({
         mode: 'history',
         routes,
@@ -32,8 +31,20 @@ async function createApp(options) {
 class VueRender {
     constructor(options) {
         this.classLogPrefix = topLogPrefix + 'VueRender: ';
+        if (!options.log) {
+            // tslint:disable
+            options.log = {
+                silly: (msg) => console.log('silly: ' + msg),
+                debug: (msg) => console.log('debug: ' + msg),
+                verbose: (msg) => console.log('verbose: ' + msg),
+                info: (msg) => console.log('info: ' + msg),
+                warn: (msg) => console.log('warn: ' + msg),
+                error: (msg) => console.log('error: ' + msg),
+            };
+            // tslint:enable
+        }
         this.defaultTitle = options.defaultTitle ? options.defaultTitle : 'Title';
-        this.log = options.log ? options.log : new Log();
+        this.log = options.log;
         this.MainComponent = options.MainComponent;
         this.Router = options.Router;
         this.routes = options.routes;
@@ -54,7 +65,6 @@ class VueRender {
         log.debug(logPrefix + 'Trying to create the main app');
         try {
             const { app } = await createApp({
-                data: { req: { url: req.url } },
                 MainComponent,
                 Router,
                 routes,

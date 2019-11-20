@@ -8,7 +8,7 @@ import {
 	vueServerRenderer,
 	VueServerRenderer,
 } from './models';
-import { LogInstance, Log } from 'larvitutils';
+import { LogInstance } from 'larvitutils';
 import { IncomingMessage, ServerResponse } from 'http';
 
 const topLogPrefix = 'vue-ssr-tools: ';
@@ -67,8 +67,21 @@ class VueRender {
 	private vueServerRenderer: VueServerRenderer;
 
 	constructor(options: VueRenderOptions) {
+		if (!options.log) {
+			// tslint:disable
+			options.log = {
+				silly:   (msg: string) => console.log('silly: ' + msg),
+				debug:   (msg: string) => console.log('debug: ' + msg),
+				verbose: (msg: string) => console.log('verbose: ' + msg),
+				info:    (msg: string) => console.log('info: ' + msg),
+				warn:    (msg: string) => console.log('warn: ' + msg),
+				error:   (msg: string) => console.log('error: ' + msg),
+			}
+			// tslint:enable
+		}
+
 		this.defaultTitle = options.defaultTitle ? options.defaultTitle : 'Title';
-		this.log = options.log ? options.log : new Log();
+		this.log = options.log;
 		this.MainComponent = options.MainComponent;
 		this.Router = options.Router;
 		this.routes = options.routes;
