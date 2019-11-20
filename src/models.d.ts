@@ -8,6 +8,7 @@ import vueServerRenderer, { RendererOptions, Renderer } from 'vue-server-rendere
  */
 type CreateAppOptions = {
 	initialData?: any;
+	log?: LogInstance;
 	MainComponent: MainComponentType;
 	Router: typeof Router;
 	routes: RouteConfig[];

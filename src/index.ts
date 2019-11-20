@@ -13,8 +13,20 @@ import { IncomingMessage, ServerResponse } from 'http';
 
 const topLogPrefix = 'vue-ssr-tools: ';
 
+// tslint:disable
+const defaultLogger = {
+	silly:   (msg: string) => console.log('silly: ' + msg),
+	debug:   (msg: string) => console.log('debug: ' + msg),
+	verbose: (msg: string) => console.log('verbose: ' + msg),
+	info:    (msg: string) => console.log('info: ' + msg),
+	warn:    (msg: string) => console.log('warn: ' + msg),
+	error:   (msg: string) => console.log('error: ' + msg),
+};
+// tslint:enable
+
 // !!! Vue.use(Router) must already be ran before this function is called !!!
 async function createApp(options: CreateAppOptions) {
+	const logPrefix = topLogPrefix + 'createApp() - ';
 	const {
 		initialData,
 		MainComponent,
@@ -29,7 +41,12 @@ async function createApp(options: CreateAppOptions) {
 		routes,
 	});
 
-	router.push(url);
+	const log = options.log ? options.log : defaultLogger;
+
+	if (typeof window === 'undefined') {
+		log.debug(logPrefix + 'Running on server (SSR), pushing router url explicitly to: "' + url + '"');
+		router.push(url);
+	}
 
 	await new Promise((resolve, reject) => {
 		router.onReady(() => {
@@ -67,21 +84,8 @@ class VueRender {
 	private vueServerRenderer: VueServerRenderer;
 
 	constructor(options: VueRenderOptions) {
-		if (!options.log) {
-			// tslint:disable
-			options.log = {
-				silly:   (msg: string) => console.log('silly: ' + msg),
-				debug:   (msg: string) => console.log('debug: ' + msg),
-				verbose: (msg: string) => console.log('verbose: ' + msg),
-				info:    (msg: string) => console.log('info: ' + msg),
-				warn:    (msg: string) => console.log('warn: ' + msg),
-				error:   (msg: string) => console.log('error: ' + msg),
-			}
-			// tslint:enable
-		}
-
 		this.defaultTitle = options.defaultTitle ? options.defaultTitle : 'Title';
-		this.log = options.log;
+		this.log = options.log ? options.log : defaultLogger;
 		this.MainComponent = options.MainComponent;
 		this.Router = options.Router;
 		this.routes = options.routes;
