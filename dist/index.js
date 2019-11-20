@@ -19,10 +19,8 @@ async function createApp(options) {
         routes,
     });
     const log = options.log ? options.log : defaultLogger;
-    if (typeof window === 'undefined') {
-        log.debug(logPrefix + 'Running on server (SSR), pushing router url explicitly to: "' + url + '"');
-        router.push(url);
-    }
+    log.debug(logPrefix + 'Pushing router url explicitly to: "' + url + '"');
+    router.push(url);
     await new Promise((resolve, reject) => {
         router.onReady(() => {
             const matchedComponents = router.getMatchedComponents();
@@ -68,6 +66,7 @@ class VueRender {
         log.debug(logPrefix + 'Trying to create the main app');
         try {
             const { app } = await createApp({
+                log,
                 MainComponent,
                 Router,
                 routes,

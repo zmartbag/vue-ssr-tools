@@ -43,10 +43,8 @@ async function createApp(options: CreateAppOptions) {
 
 	const log = options.log ? options.log : defaultLogger;
 
-	if (typeof window === 'undefined') {
-		log.debug(logPrefix + 'Running on server (SSR), pushing router url explicitly to: "' + url + '"');
-		router.push(url);
-	}
+	log.debug(logPrefix + 'Pushing router url explicitly to: "' + url + '"');
+	router.push(url);
 
 	await new Promise((resolve, reject) => {
 		router.onReady(() => {
@@ -119,6 +117,7 @@ class VueRender {
 
 		try {
 			const { app } = await createApp({
+				log,
 				MainComponent,
 				Router,
 				routes,
