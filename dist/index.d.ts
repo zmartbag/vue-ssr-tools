@@ -7,10 +7,9 @@ declare function createApp(options: CreateAppOptions): Promise<{
 }>;
 declare class VueRender {
     private classLogPrefix;
-    private defaultTitle;
-    private initialData;
     private log;
     private MainComponent;
+    private renderContext;
     private Router;
     private routes;
     private template;
@@ -18,7 +17,9 @@ declare class VueRender {
     private vueRenderer;
     private vueServerRenderer;
     constructor(options: VueRenderOptions);
-    middleware(req: IncomingMessage, res: ServerResponse): Promise<void>;
+    middleware(req: IncomingMessage, res: ServerResponse & {
+        __INITIAL_STATE__: any;
+    }): Promise<void>;
 }
 export { createApp, VueRender };
 //# sourceMappingURL=index.d.ts.map

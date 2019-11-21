@@ -15,13 +15,14 @@ type CreateAppOptions = {
 	Vue: typeof Vue;
 }
 
+type RoutesType = (initialState: any) => Promise<RouteConfig[]>;
+
 type VueRenderOptions = {
-	defaultTitle?: string;
-	initialData: any;
 	log?: LogInstance;
 	MainComponent: ComponentType;
+	renderContext?: any;
 	Router: typeof Router;
-	routes: RouteConfig[];
+	routes: RoutesType;
 	template: string;
 	Vue: typeof Vue;
 	vueServerRenderer: VueServerRenderer;
@@ -34,8 +35,8 @@ type VueServerRenderer = {
 export {
 	ComponentType,
 	CreateAppOptions,
-	RouteConfig,
 	Router as RouterType,
+	RoutesType,
 	Vue as VueType,
 	VueRenderOptions,
 	vueServerRenderer,

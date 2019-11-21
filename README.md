@@ -68,10 +68,12 @@ const vueRender = new VueRender({
 
 	// Routes sent to the router, see vue-router documentation for
 	// more options and how these actually work
-	routes: [
-		{ path: '/', component: { template: '<p>Home</p>' }},
-		{ path: '/foo', component: { template: '<p>Foo</p>' }}
-	],
+	routes: async () => {
+		return [
+			{ path: '/', component: { template: '<p>Home</p>' }},
+			{ path: '/foo', component: { template: '<p>Foo</p>' }}
+		]
+	},
 
 	// The base template all pages will share.
 	// {{ title }} and {{{ head }}} will be covered later
@@ -140,10 +142,12 @@ Routes sent to the router, see vue-router documentation for more options and how
 
 **public/vue/routes.js**
 ```javascript
-export default [
-	{ path: '/', component: { template: '<p>Home</p>' }},
-	{ path: '/foo', component: { template: '<p>Foo</p>' }}
-]
+export default async function () {
+	return [
+		{ path: '/', component: { template: '<p>Home</p>' }},
+		{ path: '/foo', component: { template: '<p>Foo</p>' }}
+	];
+}
 ```
 
 ---

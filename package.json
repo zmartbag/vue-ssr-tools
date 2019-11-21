@@ -1,6 +1,6 @@
 {
   "name": "vue-ssr-tools",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Tooling for working with Vue server side",
   "type": "module",
   "main": "dist/index.js",

@@ -1,8 +1,8 @@
 import {
 	ComponentType,
 	CreateAppOptions,
-	RouteConfig,
 	RouterType,
+	RoutesType,
 	VueRenderOptions,
 	vueServerRenderer,
 	VueServerRenderer,
@@ -15,12 +15,12 @@ const topLogPrefix = 'vue-ssr-tools: ';
 
 // tslint:disable
 const defaultLogger = {
-	silly:   (msg: string) => console.log('silly: ' + msg),
-	debug:   (msg: string) => console.log('debug: ' + msg),
+	silly:   (msg: string) => console.log('silly: '   + msg),
+	debug:   (msg: string) => console.log('debug: '   + msg),
 	verbose: (msg: string) => console.log('verbose: ' + msg),
-	info:    (msg: string) => console.log('info: ' + msg),
-	warn:    (msg: string) => console.log('warn: ' + msg),
-	error:   (msg: string) => console.log('error: ' + msg),
+	info:    (msg: string) => console.log('info: '    + msg),
+	warn:    (msg: string) => console.log('warn: '    + msg),
+	error:   (msg: string) => console.log('error: '   + msg),
 };
 // tslint:enable
 
@@ -71,22 +71,20 @@ async function createApp(options: CreateAppOptions) {
 
 class VueRender {
 	private classLogPrefix = topLogPrefix + 'VueRender: ';
-	private defaultTitle: string;
-	private initialData: any;
 	private log: LogInstance;
 	private MainComponent: ComponentType;
+	private renderContext: any;
 	private Router: typeof RouterType;
-	private routes: RouteConfig[];
+	private routes: RoutesType;
 	private template: string;
 	private Vue: typeof VueType;
 	private vueRenderer: vueServerRenderer.Renderer;
 	private vueServerRenderer: VueServerRenderer;
 
 	constructor(options: VueRenderOptions) {
-		this.defaultTitle = options.defaultTitle ? options.defaultTitle : 'Title';
-		this.initialData = options.initialData;
 		this.log = options.log ? options.log : defaultLogger;
 		this.MainComponent = options.MainComponent;
+		this.renderContext = options.renderContext ? options.renderContext : {};
 		this.Router = options.Router;
 		this.routes = options.routes;
 		this.template = options.template;
@@ -96,11 +94,10 @@ class VueRender {
 		this.vueRenderer = this.vueServerRenderer.createRenderer({ template: this.template });
 	}
 
-	public async middleware(req: IncomingMessage, res: ServerResponse) {
+	public async middleware(req: IncomingMessage, res: ServerResponse & {__INITIAL_STATE__: any}) {
 		const {
 			classLogPrefix,
-			defaultTitle,
-			initialData,
+			renderContext,
 			log,
 			MainComponent,
 			Router,
@@ -109,22 +106,30 @@ class VueRender {
 			vueRenderer,
 		} = this;
 		const logPrefix = classLogPrefix + 'middleware() - ';
-		const context = {
-			url: req.url,
-			title: defaultTitle,
-			head: '',
-		};
+
+		if (!renderContext.url) {
+			renderContext.url = req.url;
+		}
+
+		if (!renderContext.title) {
+			renderContext.title = 'Title';
+		}
+
+		if (!renderContext.head) {
+			renderContext.head = '';
+		}
+
 		let createdApp;
 
 		log.debug(logPrefix + 'Trying to create the main app');
 
 		try {
 			const { app } = await createApp({
-				initialData,
+				initialData: res.__INITIAL_STATE__,
 				log,
 				MainComponent,
 				Router,
-				routes,
+				routes: await routes(res.__INITIAL_STATE__),
 				url: String(req.url),
 				Vue,
 			});
@@ -143,7 +148,7 @@ class VueRender {
 
 		log.debug(logPrefix + 'Main app created, rendering to string');
 
-		vueRenderer.renderToString(createdApp, context, (err, html) => {
+		vueRenderer.renderToString(createdApp, renderContext, (err, html) => {
 			if (err) {
 				log.warn(logPrefix + 'Could not render to string, err: "' + err.message.replace(/(\r\n|\n|\r)/gm, ' ') + '"');
 				if (process.env.NODE_ENV === 'development') {
@@ -153,7 +158,10 @@ class VueRender {
 				res.end('Internal server error');
 				return;
 			}
-			log.debug(logPrefix + 'Rendered main vue app to string');
+			log.debug(logPrefix + 'Rendered main vue app to string, setting __INITIAL_STATE__');
+
+			html = html.replace('<!--__INITIAL_STATE__-->', '<script>window.__INITIAL_STATE__ = ' + JSON.stringify(res.__INITIAL_STATE__) + ';</script>');
+
 			res.end(html);
 		});
 	}
