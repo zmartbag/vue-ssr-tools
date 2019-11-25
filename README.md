@@ -107,7 +107,7 @@ server.listen(3000, err => {
 });
 ```
 
-test it out bu running it from the console: `node --experimental-modules index.js`
+test it out by running it from the console: `node index.js` (or for node 8-12: `node --experimental-modules index.js`)
 
 ### 2. Client side hydration
 
