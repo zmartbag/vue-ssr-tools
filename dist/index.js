@@ -96,11 +96,11 @@ class VueRender {
         vueRenderer.renderToString(createdApp, renderContext, (err, html) => {
             if (err) {
                 log.warn(logPrefix + 'Could not render to string, err: "' + err.message.replace(/(\r\n|\n|\r)/gm, ' ') + '"');
+                res.statusCode = 500;
+                res.end('Internal server error');
                 if (process.env.NODE_ENV === 'development') {
                     throw err;
                 }
-                res.statusCode = 500;
-                res.end('Internal server error');
                 return;
             }
             log.debug(logPrefix + 'Rendered main vue app to string, setting __INITIAL_STATE__');
