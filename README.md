@@ -8,10 +8,10 @@ Tooling for working with Vue server side
   - [Dependencies](#dependencies)
 * [Installation](#installation)
 * [Usage](#usage)
-  - 1. [Basic server side render with router](#1-basic-server-side-render-with-router)
-  - 2. [Client side hydration](#2-client-side-hydration)
-    - 2.1. [Break apart the code we want to use both client- and serverside](#21-break-apart-the-code-we-want-to-use-both-client--and-serverside)
-    - 2.2. [Create new files needed client side](#22-create-new-files-needed-client-side)
+  1. [Basic server side render with router](#1-basic-server-side-render-with-router)
+  2. [Client side hydration](#2-client-side-hydration)
+     1. [Break apart the code we want to use both client- and serverside](#21-break-apart-the-code-we-want-to-use-both-client--and-serverside)
+     2. [Create new files needed client side](#22-create-new-files-needed-client-side)
 
 ## Preparations
 
