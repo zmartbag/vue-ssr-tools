@@ -12,6 +12,7 @@ Tooling for working with Vue server side
   2. [Client side hydration](#2-client-side-hydration)
      1. [Break apart the code we want to use both client- and serverside](#21-break-apart-the-code-we-want-to-use-both-client--and-serverside)
      2. [Create new files needed client side](#22-create-new-files-needed-client-side)
+  3. [Write component templates in separate HTML file](#3-write-component-templates-in-separate-html-file)
 
 ## Preparations
 
@@ -320,4 +321,107 @@ We also need to modify our base template to include our client entry file.
 		<!--vue-ssr-outlet-->
 	</body>
 </html>
+```
+### 3. Write component templates in separate HTML file
+
+In this section we use a handy tool to write the vue component template part in a HTML file for better editor support and maintainability.
+
+First we load a little tool that fetches html-files for us, we do this in index.js and public/vue/entry.js
+
+**index.js**
+```javascript
+import { VueRender, GetVueTmpl } from 'vue-ssr-tools';
+import vueServerRenderer from 'vue-server-renderer';
+import Router from 'vue-router';
+import Vue from 'vue';
+import express from 'express';
+
+// Imported stuff not needed when all was in the same file:
+import mainComponentFactory from './public/vue/components/main.js';
+import routesFactory from './public/vue/routes.js';
+import fs from 'fs';
+
+Vue.use(Router);
+
+const server = express();
+const getVueTmpl = new GetVueTmpl({
+	publicHost: 'http://localhost:3000',
+	templatesBasePath: '/vue/templates/'
+});
+
+// Serve the public folder as static files directly
+server.use(express.static('public'));
+
+// Server node modules publicly
+server.use('/node_modules', express.static('node_modules'));
+
+// Instance of a SSR vue render thingie with routes and all
+const vueRender = new VueRender({
+	Router,
+	template: fs.readFileSync('./index.template.html', 'utf-8').toString(),
+	Vue,
+	vueServerRenderer,
+});
+
+// Instantiate main component and routes for each request
+// and register the vueRender middleware on the express server
+server.get('*', (req, res, cb) => {
+	res.mainComponent = mainComponentFactory({ getVueTmpl });
+	res.routes = routesFactory();
+	vueRender.middleware(req, res, cb);
+});
+
+server.listen(3000, err => {
+	if (err) throw err;
+	console.log('HTTP server started on port: "3000"');
+});
+```
+
+**public/vue/components/main.js**
+```javascript
+export default async function (options) {
+	const { getVueTmpl } = options;
+
+	return {
+		template: await getVueTmpl.getString('main')
+	};
+}
+```
+
+**public/vue/templates/main.html**
+```HTML
+<div id="vue-main">
+	<ul>
+		<li><router-link to="/">Home</router-link></li>
+		<li><router-link to="/foo">Foo</router-link></li>
+	</ul>
+	<router-view></router-view>
+</div>
+```
+
+**public/vue/entry.js**
+```javascript
+import { createApp, GetVueTmpl } from '/node_modules/vue-ssr-tools/dist/index.js';
+import Vue from '/node_modules/vue/dist/vue.esm.browser.min.js';
+import Router from '/node_modules/vue-router/dist/vue-router.esm.browser.min.js';
+import mainComponentFactory from './components/main.js';
+import routesFactory from './routes.js';
+
+Vue.use(Router);
+
+const getVueTmpl = new GetVueTmpl({
+	publicHost: 'http://localhost:3000',
+	templatesBasePath: '/vue/templates/'
+});
+
+(async () => {
+	const { app } = await createApp({
+		mainComponent: mainComponentFactory({ getVueTmpl }),
+		Router,
+		routes: routesFactory(),
+		url: window.location.pathname,
+		Vue,
+	});
+	app.$mount('#vue-main')
+})();
 ```
