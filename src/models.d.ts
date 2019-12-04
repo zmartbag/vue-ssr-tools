@@ -3,26 +3,38 @@ import Router, { RouteConfig } from 'vue-router';
 import { LogInstance } from 'larvitutils';
 import vueServerRenderer, { RendererOptions, Renderer } from 'vue-server-renderer';
 
-type ComponentType = (initialData: any) => Promise<Vue.Component>;
-
+/**
+ * @param log - For logging
+ * @param mainComponent - main vue component to be rendered
+ * @param Router - Vuerouter, non instanciated
+ * @param routes - to be sent to Vuerouter
+ * @param url - what url we are on right now
+ * @param Vue - Vue
+ */
 type CreateAppOptions = {
-	initialData?: any;
 	log?: LogInstance;
-	MainComponent: ComponentType;
+	mainComponent: Vue.Component | Promise<Vue.Component>;
 	Router: typeof Router;
-	routes: RouteConfig[];
+	routes: RouteConfig[] | Promise<RouteConfig[]>;
 	url: string;
 	Vue: typeof Vue;
 }
 
-type RoutesType = (initialState: any) => Promise<RouteConfig[]>;
+/**
+ * @param log logging
+ * @param publicHost Full protocol and hostname to the external site, Example: https://mysite.com
+ */
+type GetVueTmplOptions = {
+	log?: LogInstance;
+	publicHost: string;
+	templatesBasePath: string;
+}
 
 type VueRenderOptions = {
 	log?: LogInstance;
-	MainComponent: ComponentType;
+	mainComponent: Vue.Component;
 	renderContext?: any;
 	Router: typeof Router;
-	routes: RoutesType;
 	template: string;
 	Vue: typeof Vue;
 	vueServerRenderer: VueServerRenderer;
@@ -33,10 +45,9 @@ type VueServerRenderer = {
 }
 
 export {
-	ComponentType,
 	CreateAppOptions,
+	GetVueTmplOptions,
 	Router as RouterType,
-	RoutesType,
 	Vue as VueType,
 	VueRenderOptions,
 	vueServerRenderer,

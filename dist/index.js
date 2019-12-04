@@ -12,11 +12,10 @@ const defaultLogger = {
 // !!! Vue.use(Router) must already be ran before this function is called !!!
 async function createApp(options) {
     const logPrefix = topLogPrefix + 'createApp() - ';
-    const { initialData, MainComponent, Router, routes, url, Vue, } = options;
-    const main = await MainComponent(initialData);
+    const { mainComponent, Router, routes, url, Vue, } = options;
     const router = new Router({
         mode: 'history',
-        routes,
+        routes: await Promise.resolve(routes),
     });
     const log = options.log ? options.log : defaultLogger;
     log.debug(logPrefix + 'Pushing router url explicitly to: "' + url + '"');
@@ -34,28 +33,59 @@ async function createApp(options) {
             resolve();
         }, reject);
     });
+    const resovledMainComponent = await Promise.resolve(mainComponent);
     const app = new Vue({
         // The root instance simply renders the App component.
         router,
-        render: h => h(main),
+        render: h => h(resovledMainComponent),
     });
     return { app, router };
+}
+/**
+ * Tooling to get vue template strings from .html-files
+ */
+class GetVueTmpl {
+    constructor(options) {
+        this.logPrefix = topLogPrefix + 'GetVueTmpl: ';
+        this.log = options.log ? options.log : defaultLogger;
+        this.publicHost = options.publicHost;
+        this.templatesBasePath = options.templatesBasePath;
+    }
+    async getString(componentName) {
+        const logPrefix = this.logPrefix + 'getString() - ';
+        const { log, publicHost, templatesBasePath } = this;
+        let fetch;
+        let tmplPath;
+        if (typeof window === 'undefined') {
+            log.debug(logPrefix + 'Running server side');
+            // const __dirname = import.meta.url.slice(7, import.meta.url.lastIndexOf('/'));
+            // @ts-ignore
+            const fetchModule = await import('./node-fetch.js');
+            fetch = fetchModule.default;
+            tmplPath = publicHost + templatesBasePath + componentName + '.html';
+        }
+        else {
+            log.debug(logPrefix + 'Running client side');
+            fetch = window.fetch;
+            tmplPath = templatesBasePath + componentName + '.html';
+        }
+        const result = await fetch(tmplPath);
+        return result.text();
+    }
 }
 class VueRender {
     constructor(options) {
         this.classLogPrefix = topLogPrefix + 'VueRender: ';
         this.log = options.log ? options.log : defaultLogger;
-        this.MainComponent = options.MainComponent;
         this.renderContext = options.renderContext ? options.renderContext : {};
         this.Router = options.Router;
-        this.routes = options.routes;
         this.template = options.template;
         this.Vue = options.Vue;
         this.vueServerRenderer = options.vueServerRenderer;
         this.vueRenderer = this.vueServerRenderer.createRenderer({ template: this.template });
     }
     async middleware(req, res) {
-        const { classLogPrefix, renderContext, log, MainComponent, Router, routes, Vue, vueRenderer, } = this;
+        const { classLogPrefix, renderContext, log, Router, Vue, vueRenderer, } = this;
         const logPrefix = classLogPrefix + 'middleware() - ';
         if (!renderContext.url) {
             renderContext.url = req.url;
@@ -70,11 +100,10 @@ class VueRender {
         log.debug(logPrefix + 'Trying to create the main app');
         try {
             const { app } = await createApp({
-                initialData: res.__INITIAL_STATE__,
                 log,
-                MainComponent,
+                mainComponent: res.mainComponent,
                 Router,
-                routes: await routes(res.__INITIAL_STATE__),
+                routes: res.routes,
                 url: String(req.url),
                 Vue,
             });
@@ -109,4 +138,4 @@ class VueRender {
         });
     }
 }
-export { createApp, VueRender };
+export { createApp, GetVueTmpl, VueRender, };

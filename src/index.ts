@@ -1,13 +1,13 @@
 import {
-	ComponentType,
 	CreateAppOptions,
+	GetVueTmplOptions,
 	RouterType,
-	RoutesType,
 	VueRenderOptions,
 	vueServerRenderer,
 	VueServerRenderer,
 	VueType,
 } from './models';
+import { RouteConfig } from 'vue-router';
 import { LogInstance } from 'larvitutils';
 import { IncomingMessage, ServerResponse } from 'http';
 
@@ -28,17 +28,16 @@ const defaultLogger = {
 async function createApp(options: CreateAppOptions) {
 	const logPrefix = topLogPrefix + 'createApp() - ';
 	const {
-		initialData,
-		MainComponent,
+		mainComponent,
 		Router,
 		routes,
 		url,
 		Vue,
 	} = options;
-	const main = await MainComponent(initialData);
+
 	const router = new Router({
 		mode: 'history',
-		routes,
+		routes: await Promise.resolve(routes),
 	});
 
 	const log = options.log ? options.log : defaultLogger;
@@ -61,21 +60,61 @@ async function createApp(options: CreateAppOptions) {
 		}, reject);
 	});
 
+	const resovledMainComponent = await Promise.resolve(mainComponent);
+
 	const app = new Vue({
 		// The root instance simply renders the App component.
 		router,
-		render: h => h(main),
+		render: h => h(resovledMainComponent),
 	});
 	return { app, router };
+}
+
+/**
+ * Tooling to get vue template strings from .html-files
+ */
+class GetVueTmpl {
+	private logPrefix: string = topLogPrefix + 'GetVueTmpl: ';
+
+	private log: LogInstance;
+	private publicHost: string;
+	private templatesBasePath: string;
+
+	constructor(options: GetVueTmplOptions) {
+		this.log = options.log ? options.log : defaultLogger;
+		this.publicHost = options.publicHost;
+		this.templatesBasePath = options.templatesBasePath;
+	}
+
+	public async getString(componentName: string): Promise<string> {
+		const logPrefix = this.logPrefix + 'getString() - ';
+		const { log, publicHost, templatesBasePath } = this;
+		let fetch: (input: RequestInfo, init?: RequestInit | undefined) => Promise<Response>;
+		let tmplPath;
+
+		if (typeof window === 'undefined') {
+			log.debug(logPrefix + 'Running server side');
+			// const __dirname = import.meta.url.slice(7, import.meta.url.lastIndexOf('/'));
+			// @ts-ignore
+			const fetchModule = await import('./node-fetch.js');
+			fetch = fetchModule.default;
+			tmplPath = publicHost + templatesBasePath + componentName + '.html';
+		} else {
+			log.debug(logPrefix + 'Running client side');
+			fetch = window.fetch;
+			tmplPath = templatesBasePath + componentName + '.html';
+		}
+
+		const result = await fetch(tmplPath);
+		return result.text();
+	}
 }
 
 class VueRender {
 	private classLogPrefix = topLogPrefix + 'VueRender: ';
 	private log: LogInstance;
-	private MainComponent: ComponentType;
 	private renderContext: any;
 	private Router: typeof RouterType;
-	private routes: RoutesType;
 	private template: string;
 	private Vue: typeof VueType;
 	private vueRenderer: vueServerRenderer.Renderer;
@@ -83,10 +122,8 @@ class VueRender {
 
 	constructor(options: VueRenderOptions) {
 		this.log = options.log ? options.log : defaultLogger;
-		this.MainComponent = options.MainComponent;
 		this.renderContext = options.renderContext ? options.renderContext : {};
 		this.Router = options.Router;
-		this.routes = options.routes;
 		this.template = options.template;
 		this.Vue = options.Vue;
 		this.vueServerRenderer = options.vueServerRenderer;
@@ -94,14 +131,12 @@ class VueRender {
 		this.vueRenderer = this.vueServerRenderer.createRenderer({ template: this.template });
 	}
 
-	public async middleware(req: IncomingMessage, res: ServerResponse & {__INITIAL_STATE__: any}) {
+	public async middleware(req: IncomingMessage, res: ServerResponse & {__INITIAL_STATE__: any, mainComponent: Vue.Component, routes: RouteConfig[] }) {
 		const {
 			classLogPrefix,
 			renderContext,
 			log,
-			MainComponent,
 			Router,
-			routes,
 			Vue,
 			vueRenderer,
 		} = this;
@@ -125,11 +160,10 @@ class VueRender {
 
 		try {
 			const { app } = await createApp({
-				initialData: res.__INITIAL_STATE__,
 				log,
-				MainComponent,
+				mainComponent: res.mainComponent,
 				Router,
-				routes: await routes(res.__INITIAL_STATE__),
+				routes: res.routes,
 				url: String(req.url),
 				Vue,
 			});
@@ -167,4 +201,8 @@ class VueRender {
 	}
 }
 
-export { createApp, VueRender };
+export {
+	createApp,
+	GetVueTmpl,
+	VueRender,
+};
