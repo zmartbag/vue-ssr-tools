@@ -28,7 +28,7 @@ declare class VueRender {
     private vueServerRenderer;
     constructor(options: VueRenderOptions);
     middleware(req: IncomingMessage, res: ServerResponse & {
-        __INITIAL_STATE__: any;
+        __SHARED_STATE__: any;
         mainComponent: Vue.Component;
         routes: RouteConfig[];
     }): Promise<void>;

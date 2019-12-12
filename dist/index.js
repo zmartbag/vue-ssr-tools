@@ -132,8 +132,8 @@ class VueRender {
                 }
                 return;
             }
-            log.debug(logPrefix + 'Rendered main vue app to string, setting __INITIAL_STATE__');
-            html = html.replace('<!--__INITIAL_STATE__-->', '<script>window.__INITIAL_STATE__ = ' + JSON.stringify(res.__INITIAL_STATE__) + ';</script>');
+            log.debug(logPrefix + 'Rendered main vue app to string, setting __SHARED_STATE__');
+            html = html.replace('<!--__SHARED_STATE__-->', '<script>window.__SHARED_STATE__ = ' + JSON.stringify(res.__SHARED_STATE__) + ';</script>');
             res.end(html);
         });
     }
