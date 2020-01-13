@@ -196,6 +196,11 @@ class VueRender {
 
 			html = html.replace('<!--__SHARED_STATE__-->', '<script>window.__SHARED_STATE__ = ' + JSON.stringify(res.__SHARED_STATE__) + ';</script>');
 
+			if (res.headersSent) {
+				log.verbose(logPrefix + 'Headers are already sent, can not send vue app to client');
+				return;
+			}
+
 			res.end(html);
 		});
 	}
