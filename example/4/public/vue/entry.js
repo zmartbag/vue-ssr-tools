@@ -19,6 +19,9 @@ const store = new Vuex.Store({
 		}
 	}
 });
+if (window.__INITIAL_STATE__) {
+	store.replaceState(window.__INITIAL_STATE__);
+}
 
 (async () => {
 	const { app } = await createApp({

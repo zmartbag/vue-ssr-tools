@@ -439,6 +439,9 @@ Vue.use(Vuex);
 
 ... // other code
 const store = new Vuex.Store({ ... }); // <-- new
+if (window.__INITIAL_STATE__) { // <-- new
+	store.replaceState(window.__INITIAL_STATE__); // <-- new
+} // <-- new
 const { app } = await createApp({
 	mainComponent: mainComponentFactory({ store }), // "store" is added here
 	Router,
