@@ -13,6 +13,7 @@ Tooling for working with Vue server side
      1. [Break apart the code we want to use both client- and serverside](#21-break-apart-the-code-we-want-to-use-both-client--and-serverside)
      2. [Create new files needed client side](#22-create-new-files-needed-client-side)
   3. [Write component templates in separate HTML file](#3-write-component-templates-in-separate-html-file)
+  4. [Add Vuex](#4-add-vuex)
 
 ## Preparations
 
@@ -241,9 +242,8 @@ import Vue from 'vue';
 import express from 'express';
 
 // Imported stuff not needed when all was in the same file:
-import MainComponent from './public/vue/components/main.js';
-import routes from './public/vue/routes.js';
-import fs from 'fs';
+import mainComponentFactory from './public/vue/components/main.js';
+import routesFactory from './public/vue/routes.js';import fs from 'fs';
 
 Vue.use(Router);
 
@@ -424,4 +424,37 @@ const getVueTmpl = new GetVueTmpl({
 	});
 	app.$mount('#vue-main')
 })();
+```
+
+### 4. Add Vuex
+
+
+
+Add store *AND* Vuex to createApp:
+```javascript
+import Vuex from '/node_modules/vuex/dist/vuex.esm.browser.min.js';
+
+const store = new Vuex.Store({ ... });
+
+const { app } = await createApp({
+	mainComponent: mainComponentFactory({ getVueTmpl }),
+	Router,
+	routes: routesFactory(),
+	store,
+	url: window.location.pathname,
+	Vue,
+});
+```
+
+On the server side VueRender is needed. See [Basic server side render with router](#1-basic-server-side-render-with-router) for full example. Below is the additions to that code.
+
+Add Vuex to VueRender:
+```javascript
+import Vuex from '/node_modules/vuex/dist/vuex.esm.browser.min.js';
+...
+const vueRender = new VueRender({
+	...
+	Vuex,
+	...
+});
 ```

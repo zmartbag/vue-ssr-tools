@@ -1,6 +1,6 @@
 {
   "name": "vue-ssr-tools",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Tooling for working with Vue server side",
   "type": "module",
   "main": "dist/index.js",
@@ -37,7 +37,8 @@
     "typescript": "3.7.5",
     "vue": "2.6.11",
     "vue-router": "3.1.5",
-    "vue-server-renderer": "2.6.11"
+    "vue-server-renderer": "2.6.11",
+    "vuex": "3.1.2"
   },
   "dependencies": {
     "larvitutils": "4.0.2"

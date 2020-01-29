@@ -1,7 +1,6 @@
 /// <reference types="node" />
-import { CreateAppOptions, GetVueTmplOptions, RouterType, VueRenderOptions, VueType } from './models';
-import { RouteConfig } from 'vue-router';
-import { IncomingMessage, ServerResponse } from 'http';
+import { CreateAppOptions, GetVueTmplOptions, MwRes, RouterType, VueRenderOptions, VueType } from './models';
+import { IncomingMessage } from 'http';
 declare function createApp(options: CreateAppOptions): Promise<{
     app: import("vue/types/vue").CombinedVueInstance<VueType, object, object, object, Record<never, any>>;
     router: RouterType;
@@ -27,11 +26,7 @@ declare class VueRender {
     private vueRenderer;
     private vueServerRenderer;
     constructor(options: VueRenderOptions);
-    middleware(req: IncomingMessage, res: ServerResponse & {
-        __SHARED_STATE__: any;
-        mainComponent: Vue.Component;
-        routes: RouteConfig[];
-    }): Promise<void>;
+    middleware(req: IncomingMessage, res: MwRes): Promise<void>;
 }
 export { createApp, GetVueTmpl, VueRender, };
 //# sourceMappingURL=index.d.ts.map

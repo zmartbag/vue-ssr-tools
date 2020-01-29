@@ -1,7 +1,9 @@
-import Vue from 'vue';
-import Router, { RouteConfig } from 'vue-router';
 import { LogInstance } from 'larvitutils';
+import { ServerResponse } from 'http';
+import Router, { RouteConfig } from 'vue-router';
+import Vue from 'vue';
 import vueServerRenderer, { RendererOptions, Renderer } from 'vue-server-renderer';
+import { Store } from 'vuex';
 
 /**
  * @param log - For logging
@@ -16,6 +18,7 @@ type CreateAppOptions = {
 	mainComponent: Vue.Component | Promise<Vue.Component>;
 	Router: typeof Router;
 	routes: RouteConfig[] | Promise<RouteConfig[]>;
+	store?: Store<any>;
 	url: string;
 	Vue: typeof Vue;
 }
@@ -28,6 +31,13 @@ type GetVueTmplOptions = {
 	log?: LogInstance;
 	publicHost: string;
 	templatesBasePath: string;
+}
+
+type MwRes = ServerResponse & {
+	__SHARED_STATE__: any,
+	mainComponent: Vue.Component,
+	routes: RouteConfig[],
+	store?: Store<any>
 }
 
 type VueRenderOptions = {
@@ -47,6 +57,7 @@ type VueServerRenderer = {
 export {
 	CreateAppOptions,
 	GetVueTmplOptions,
+	MwRes,
 	Router as RouterType,
 	Vue as VueType,
 	VueRenderOptions,

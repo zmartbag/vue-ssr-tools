@@ -1,15 +1,16 @@
 import {
 	CreateAppOptions,
 	GetVueTmplOptions,
+	MwRes,
 	RouterType,
 	VueRenderOptions,
 	vueServerRenderer,
 	VueServerRenderer,
 	VueType,
 } from './models';
-import { RouteConfig } from 'vue-router';
+import { IncomingMessage } from 'http';
 import { LogInstance } from 'larvitutils';
-import { IncomingMessage, ServerResponse } from 'http';
+import { Store } from 'vuex';
 
 const topLogPrefix = 'vue-ssr-tools: ';
 
@@ -24,6 +25,85 @@ const defaultLogger = {
 };
 // tslint:enable
 
+// From vuex-router-sync - but that package did not have an esm build
+function sync(store: Store<any>, router: any, options?: any) {
+	function cloneRoute (to: any, from?: any) {
+		const clone: any = {
+			name: to.name,
+			path: to.path,
+			hash: to.hash,
+			query: to.query,
+			params: to.params,
+			fullPath: to.fullPath,
+			meta: to.meta,
+		};
+		if (from) {
+			clone.from = cloneRoute(from);
+		}
+		return Object.freeze(clone);
+	}
+
+	const moduleName = (options || {}).moduleName || 'route';
+
+	store.registerModule(moduleName, {
+		namespaced: true,
+		state: cloneRoute(router.currentRoute),
+		mutations: {
+			'ROUTE_CHANGED': function ROUTE_CHANGED (state: any, transition: any) {
+				store.state[moduleName] = cloneRoute(transition.to, transition.from)
+			}
+		}
+	});
+
+	let isTimeTraveling = false;
+	let currentPath: string;
+
+	// sync router on store change
+	const storeUnwatch = store.watch(
+		(state: any) => {
+			return state[moduleName];
+		},
+		(route: any) => {
+			const fullPath = route.fullPath;
+			if (fullPath === currentPath) {
+				return;
+			}
+			if (currentPath != null) {
+				isTimeTraveling = true
+				router.push(route)
+			}
+			currentPath = fullPath;
+		},
+		// @ts-ignore
+		{ sync: true },
+	);
+
+	// sync store on router navigation
+	const afterEachUnHook = router.afterEach((to: any, from: any) => {
+		if (isTimeTraveling) {
+			isTimeTraveling = false
+			return
+		}
+		currentPath = to.fullPath
+		store.commit(moduleName + '/ROUTE_CHANGED', { to, from })
+	});
+
+	return function unsync () {
+		// On unsync, remove router hook
+		if (afterEachUnHook != null) {
+			afterEachUnHook()
+		}
+
+		// On unsync, remove store watch
+		if (storeUnwatch != null) {
+			storeUnwatch()
+		}
+
+		// On unsync, unregister Module with store
+		store.unregisterModule(moduleName)
+	};
+}
+
 // !!! Vue.use(Router) must already be ran before this function is called !!!
 async function createApp(options: CreateAppOptions) {
 	const logPrefix = topLogPrefix + 'createApp() - ';
@@ -31,6 +111,7 @@ async function createApp(options: CreateAppOptions) {
 		mainComponent,
 		Router,
 		routes,
+		store,
 		url,
 		Vue,
 	} = options;
@@ -42,25 +123,41 @@ async function createApp(options: CreateAppOptions) {
 
 	const log = options.log ? options.log : defaultLogger;
 
-	log.debug(logPrefix + 'Pushing router url explicitly to: "' + url + '"');
-	router.push(url);
+	log.debug(logPrefix + 'Running');
 
+	if (typeof window === 'undefined') {
+		log.debug(logPrefix + 'SSR detected, setting router url explicitly to: "' + url + '"');
+		router.push(url);
+	}
+
+	if (store) {
+		log.debug(logPrefix + 'Store detected, syncing with router');
+		sync(store, router);
+	}
+
+	log.verbose(logPrefix + 'Wait for router to be ready');
 	await new Promise((resolve, reject) => {
+		log.debug(logPrefix + 'Waiting for router to be ready');
 		router.onReady(() => {
 			const matchedComponents = router.getMatchedComponents();
 			// No matched routes, reject with 404
 			if (!matchedComponents.length) {
 				const err = new Error('Not Found');
+				log.debug(logPrefix + 'No matching routes found');
 				err.name = '404';
 				reject(err);
 				return;
 			}
+
+			log.debug(logPrefix + 'Found one or more matching components, continuing');
 
 			resolve();
 		}, reject);
 	});
 
 	const resovledMainComponent = await Promise.resolve(mainComponent);
+
+	log.debug(logPrefix + 'Main component resolved');
 
 	const app = new Vue({
 		// The root instance simply renders the App component.
@@ -131,7 +228,7 @@ class VueRender {
 		this.vueRenderer = this.vueServerRenderer.createRenderer({ template: this.template });
 	}
 
-	public async middleware(req: IncomingMessage, res: ServerResponse & {__SHARED_STATE__: any, mainComponent: Vue.Component, routes: RouteConfig[] }) {
+	public async middleware(req: IncomingMessage, res: MwRes) {
 		const {
 			classLogPrefix,
 			renderContext,
@@ -164,6 +261,7 @@ class VueRender {
 				mainComponent: res.mainComponent,
 				Router,
 				routes: res.routes,
+				store: res.store,
 				url: String(req.url),
 				Vue,
 			});
