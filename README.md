@@ -47,10 +47,10 @@ This is the most basic implementation without client side hydration (Vue only ru
 **index.js**
 ```javascript
 import { VueRender } from 'vue-ssr-tools';
-import vueServerRenderer from 'vue-server-renderer';
+import express from 'express';
 import Router from 'vue-router';
 import Vue from 'vue';
-import express from 'express';
+import vueServerRenderer from 'vue-server-renderer';
 
 // The router must be attached to the vue before anything else happends
 // this is ugly as **** and will most likely be removed in Vue 3
@@ -193,15 +193,15 @@ Tie it all together in the index file.
 **index.js**
 ```javascript
 import { VueRender } from 'vue-ssr-tools';
-import vueServerRenderer from 'vue-server-renderer';
+import express from 'express';
 import Router from 'vue-router';
 import Vue from 'vue';
-import express from 'express';
+import vueServerRenderer from 'vue-server-renderer';
 
 // Imported stuff not needed when all was in the same file:
+import fs from 'fs';
 import mainComponentFactory from './public/vue/components/main.js';
 import routesFactory from './public/vue/routes.js';
-import fs from 'fs';
 
 Vue.use(Router);
 
@@ -236,10 +236,10 @@ First we need to modify our index to serve our node_modules and public folders t
 **index.js**
 ```javascript
 import { VueRender } from 'vue-ssr-tools';
-import vueServerRenderer from 'vue-server-renderer';
+import express from 'express';
 import Router from 'vue-router';
 import Vue from 'vue';
-import express from 'express';
+import vueServerRenderer from 'vue-server-renderer';
 
 // Imported stuff not needed when all was in the same file:
 import mainComponentFactory from './public/vue/components/main.js';
@@ -284,10 +284,10 @@ This file is only ran client side to create the vue app in the browser.
 **public/vue/entry.js**
 ```javascript
 import { createApp } from '/node_modules/vue-ssr-tools/dist/index.js';
-import Vue from '/node_modules/vue/dist/vue.esm.browser.min.js';
-import Router from '/node_modules/vue-router/dist/vue-router.esm.browser.min.js';
 import mainComponentFactory from './components/main.js';
+import Router from '/node_modules/vue-router/dist/vue-router.esm.browser.min.js';
 import routesFactory from './routes.js';
+import Vue from '/node_modules/vue/dist/vue.esm.browser.min.js';
 
 Vue.use(Router);
 
@@ -428,33 +428,72 @@ const getVueTmpl = new GetVueTmpl({
 
 ### 4. Add Vuex
 
-
-
-Add store *AND* Vuex to createApp:
+Add store to createApp in `public/vue/entry.js`:
 ```javascript
-import Vuex from '/node_modules/vuex/dist/vuex.esm.browser.min.js';
+... // other code
+import Vue from '/node_modules/vue/dist/vue.esm.browser.js';
+import Vuex from '/node_modules/vuex/dist/vuex.esm.browser.js';
 
-const store = new Vuex.Store({ ... });
+... // other code
+Vue.use(Vuex);
 
+... // other code
+const store = new Vuex.Store({ ... }); // <-- new
 const { app } = await createApp({
-	mainComponent: mainComponentFactory({ getVueTmpl }),
+	mainComponent: mainComponentFactory({ store }), // "store" is added here
 	Router,
 	routes: routesFactory(),
-	store,
+	store, // <-- new
 	url: window.location.pathname,
 	Vue,
 });
 ```
 
-On the server side VueRender is needed. See [Basic server side render with router](#1-basic-server-side-render-with-router) for full example. Below is the additions to that code.
+On the server side we need to add state to the renderContext in VueRender. See [2.2. Create new files needed client side](#22-create-new-files-needed-client-side) for full example. Below is the additions to that code.
 
-Add Vuex to VueRender:
+Add renderContext to VueRender in `index.js`:
 ```javascript
-import Vuex from '/node_modules/vuex/dist/vuex.esm.browser.min.js';
-...
+import Vuex from 'vuex';
+... // other code
+
+Vue.use(Router);
+Vue.use(Vuex); // <-- new
+
+... // other code
+
+const store = new Vuex.Store({ ... }); // <-- new
+const renderContext = {}; // <-- new
+renderContext.rendered = () => { // <-- new
+	renderContext.state = store.state; // <-- new
+}; // <-- new
+
 const vueRender = new VueRender({
-	...
-	Vuex,
-	...
+	... // other code
+	renderContext, // <-- new
+	... // other code
 });
+
+... // other code
+server.get('*', (req, res, cb) => {
+	res.mainComponent = mainComponentFactory({ store }); // "store" is added here
+	res.routes = routesFactory();
+	vueRender.middleware(req, res, cb);
+});
+```
+
+Add state to the main component in `public/vue/components/main.js`:
+```javascript
+export default async function (options) { // "options" is added here
+	const { store } = options; // <-- new
+	return {
+		store, // <-- new
+		template: `<div id="vue-main">
+			<ul>
+				<li><router-link to="/">Home</router-link></li>
+				<li><router-link to="/foo">Foo</router-link></li>
+			</ul>
+			<router-view></router-view>
+		</div>`
+	};
+}
 ```

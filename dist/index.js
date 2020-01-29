@@ -85,29 +85,25 @@ async function createApp(options) {
         routes: await Promise.resolve(routes),
     });
     const log = options.log ? options.log : defaultLogger;
-    log.debug(logPrefix + 'Running');
-    if (typeof window === 'undefined') {
-        log.debug(logPrefix + 'SSR detected, setting router url explicitly to: "' + url + '"');
-        router.push(url);
-    }
+    log.debug(logPrefix + 'Explicitly pushing router to: "' + url + '"');
+    router.push(url);
     if (store) {
         log.debug(logPrefix + 'Store detected, syncing with router');
         sync(store, router);
     }
-    log.verbose(logPrefix + 'Wait for router to be ready');
+    log.debug(logPrefix + 'Wating for router.onReady()');
     await new Promise((resolve, reject) => {
-        log.debug(logPrefix + 'Waiting for router to be ready');
         router.onReady(() => {
             const matchedComponents = router.getMatchedComponents();
             // No matched routes, reject with 404
             if (!matchedComponents.length) {
+                log.verbose(logPrefix + 'No matched components found');
                 const err = new Error('Not Found');
-                log.debug(logPrefix + 'No matching routes found');
                 err.name = '404';
                 reject(err);
                 return;
             }
-            log.debug(logPrefix + 'Found one or more matching components, continuing');
+            log.debug(logPrefix + 'Matched components found');
             resolve();
         }, reject);
     });
@@ -183,7 +179,6 @@ class VueRender {
                 mainComponent: res.mainComponent,
                 Router,
                 routes: res.routes,
-                store: res.store,
                 url: String(req.url),
                 Vue,
             });
